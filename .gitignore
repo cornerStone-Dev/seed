@@ -1,0 +1,16 @@
+*.geany
+*.o
+inc/
+obj/
+picoUF2
+program.elf
+program.list
+program.uf2
+tool/headerGenerator
+tool/headerGenerator.c
+tool/fith2StringConst
+tool/lemon
+src/kernel.c
+gram.c
+gram.h
+gram.out
