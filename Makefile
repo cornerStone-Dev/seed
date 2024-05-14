@@ -19,7 +19,7 @@ INC := $(patsubst src/%.c,inc/%.h,$(SRC))
 
 .PHONY: clean all
 
-all : dirs src/kernel.c gram.o $(INC) $(OBJ) program.uf2
+all : dirs src/kernel.c gram.c $(INC) $(OBJ) program.uf2
 
 dirs: inc obj
 
@@ -35,7 +35,7 @@ program.uf2 : program.elf picoUF2
 picoUF2: main.cpp
 	g++ main.cpp -O2 -o picoUF2
 
-program.elf : memmap.ld start.o $(OBJ)
+program.elf : memmap.ld start.o gram.o $(OBJ)
 	$(LOCAL_TOOL_PATH)$(ARMGNU)-ld $(LOPS) -T memmap.ld start.o gram.o $(OBJ) -o program.elf
 	$(LOCAL_TOOL_PATH)$(ARMGNU)-objdump -D program.elf > program.list
 
