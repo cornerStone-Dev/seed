@@ -63,11 +63,10 @@ static void printTerminalLine(void)
 	io_prints("\r>");
 	inputLine.line[inputLine.size] = 0; // null terminate
 	io_prints(inputLine.line);
-	io_prints(" ");
-	//~ io_prints("\x08");
+	uart0_outByte(' ');
 	u32 moveCursorBack = inputLine.size - inputLine.cursor;
 	do {
-		io_prints("\x08");
+		uart0_outByte(0x08);
 	} while (moveCursorBack--);
 	return;
 }
@@ -114,8 +113,8 @@ void term_processCharacter(void)/*p;*/
 		rom_func.memcpy(&lines[term.currentLine], &inputLine, 128);
 		//~ task_enqueue(pengum_compile, lines[term.currentLine].line, 0);
 		//~ task_enqueue(io_prints, "\r>", 0);
+		i_push("\x08", 1);
 		i_push(lines[term.currentLine].line, inputLine.size+1);
-		//~ i_enqueue("\"\r>\" ps", 8);
 		//~ io_printh(*(u32*)lines[term.currentLine].line);
 		incrementCurrentLine();
 		setZeroWait();

@@ -124,8 +124,8 @@ while(1){
 	case I_BOR:	{ sp[dest] = arg1 | arg2; continue;}
 	case I_BAND:	{ sp[dest] = arg1 & arg2; continue;}
 	case I_XOR:	{ sp[dest] = arg1 ^ arg2; continue;}
-	case I_LSH:	{ sp[dest] = arg1 ^ arg2; continue;}
-	case I_RSH:	{ sp[dest] = arg1 ^ arg2; continue;}
+	case I_LSH:	{ sp[dest] = arg1 << arg2; continue;}
+	case I_RSH:	{ sp[dest] = arg1 >> arg2; continue;}
 	case I_BCLR:	{ sp[dest] = arg1 &~arg2; continue;}
 	case I_EQ:	{ sp[dest] = arg1==arg2?1:0; continue;}
 	case I_NE:	{ sp[dest] = arg1!=arg2?1:0; continue;}

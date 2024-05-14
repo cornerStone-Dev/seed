@@ -55,9 +55,8 @@ testRun: all | $(UF2_TARGET_DIR)
 	sudo mount -t drvfs $(DRIVE): $(UF2_TARGET_DIR)
 	cp program.uf2 $(UF2_TARGET_DIR)
 
-src/kernel.c: src_fith/kernel.fith tool/fith2StringConst
-	(cd src_fith && ../tool/fith2StringConst kernel.fith)
-#~ 	./tool/fith2StringConst src_fith/kernel.fith
+src/kernel.c: src_seed/kernel.seed tool/fith2StringConst
+	(cd src_seed && ../tool/fith2StringConst kernel.seed)
 
 tool/headerGenerator.c: tool/headerGenerator.re
 	re2c -W -i tool/headerGenerator.re -o tool/headerGenerator.c
