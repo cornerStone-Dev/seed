@@ -73,6 +73,30 @@ compileVal(u32 val, u32 reg)
 		*c.compileCursor++ = val >> 16;
 	}
 }
+
+static u32
+compileMov(u32 dest, u32 reg)
+{
+	u32 code = I_MOVE;
+	code += setDest(dest) + setArg1(reg);
+	return code;
+}
+
+static u32
+compileReturn(u32 dest)
+{
+	u32 code = SUBI_RET;
+	code += setDest(dest);
+	return code;
+}
+
+static u32
+compileNamedFunctionCall(u32 dest)
+{
+	u32 code = SUBI_CALL;
+	return code + setDest(dest);
+}
+
 /*e*/void
 parse_intLit(Token *t)/*p;*/
 {
@@ -192,8 +216,24 @@ createLocalName(u8 *start, u32 length)/*p;*/
 	return name;
 }
 
-/*e*/static Block*
-pushNewBlock(u32 type)/*i;*/
+/*e*/Tree *
+resolveName(u8 *start, u32 length)/*p;*/
+{
+	Tree *name = tree_find(c.globals, start, length);
+	if (!name) {
+		Block *cursor = c.blocks;
+		while (cursor)
+		{
+			name = tree_find(cursor->names, start, length);
+			if (name) { break; }
+			cursor = cursor->next;
+		}
+	}
+	return name;
+}
+
+/*e*/Block*
+pushNewBlock(u32 type)/*p;*/
 {
 	Block *newBlock = zalloc(sizeof(Block));
 	newBlock->blockType = type;
@@ -205,8 +245,8 @@ pushNewBlock(u32 type)/*i;*/
 	return newBlock;
 }
 
-/*e*/static void
-popBlock(void)/*i;*/
+/*e*/void
+popBlock(void)/*p;*/
 {
 	Block *current = list_removeFirst(&c.blocks);
 	if (current->varNum > c.varNumHighWater)
@@ -223,9 +263,11 @@ parse_func_start(Token *funcTok)/*p;*/
 {
 	// we are inside a top level statement
 	// create global name for this function
+	io_printsln(funcTok->string, funcTok->length);
 	Tree *name = createGlobalName(funcTok->string, funcTok->length);
 	name->type = TYPE_FUNCTION;
-	name->value  = (void*)((u32)c.compileBase+1);
+	name->value  = (void*)c.compileBase;
+	io_printin((u32)name->value);
 	c.currentFunction = name;
 	// create a new block for the function
 	pushNewBlock(BLOCK_FUNCTION);
@@ -238,8 +280,8 @@ parse_func_start(Token *funcTok)/*p;*/
 /*e*/void
 parse_param(Token *paramTok)/*p;*/
 {
-	createLocalName(paramTok->string, paramTok->length);
-	c.blocks->varNum++;
+	Tree *name = createLocalName(paramTok->string, paramTok->length);
+	name->value  = (void*)(u32)c.blocks->varNum++;
 	c.nextReg++;
 }
 
@@ -257,12 +299,70 @@ parse_func_end()/*p;*/
 	//~ // reset parameters to starting values for function compiliation
 	//~ c.nextReg = 0;
 	//~ c.error = 0;
+	// check for errors
+	popBlock();
+	if (c.error)
+	{
+		c.error = 0;
+		io_prints(c.currentFunction->key);
+		io_printsn(": canceled, there was an error.");
+		tree_del(&c.globals, c.currentFunction->key, c.currentFunction->keyLen);
+	} else {
+		u32 wordSize = ((u32)c.compileCursor - (u32)c.compileBase);
+		io_prints(c.currentFunction->key);
+		io_prints(": defined, # bytes ");
+		io_printin(wordSize);
+		c.compileBase = c.compileCursor;
+	}
+	// reset state
+	c.currentFunction = 0;
+	c.nextReg = 0;
+	c.varNumHighWater = 0;
+	c.compileCursor = c.compileBase;
 }
+
+/*e*/void
+parse_return(Token *expr)/*p;*/
+{
+	//~ if (expr)
+	//~ {
+		//~ *c.compileCursor++ = compileMov(0, --c.nextReg);
+	//~ }
+	*c.compileCursor++ = compileReturn(--c.nextReg);
+}
+
+/*e*/void
+parse_namedFunctionCall(Token *expr, u32 numArgs)/*p;*/
+{
+	if (expr->type != IDENT) { return io_printsn("dynamic function call not implemented"); }
+	Tree *name = expr->as.var.name;
+	if (name == 0 ) { io_printsn("parse_namedFunctionCall: Symbol not resolved."); }
+	io_printsln(expr->string, expr->length);
+	*c.compileCursor++ = compileNamedFunctionCall(c.blocks->varNum);
+	*c.compileCursor = (u16*)name->value - c.compileCursor; c.compileCursor++;
+	io_printin((u32)name->value);
+	io_printin((u32)(c.compileCursor-1));
+	io_printin((s32)(s16)*(c.compileCursor-1));
+}
+
+/*e*/void
+parse_ident(Token *identTok, s32 lookAhead)/*p;*/
+{
+	Tree *name = resolveName(identTok->string, identTok->length);
+	if (name == 0 ) { io_printsn("Error: Symbol not resolved."); }
+	identTok->as.var.name = name;
+	if (lookAhead != LPAREN && lookAhead != EQUALS)
+	{
+		*c.compileCursor++ = compileMov(c.nextReg++, (u32)name->value);
+		io_printsn("load register.");
+	}
+}
+
 
 #if 0
 
-/*e*/Tree*
-resolveName(Context *c, String *name)/*p;*/
+Tree*
+resolveName(Context *c, String *name)
 {
 	LocalScope *cursor = c->scope;
 	do {
@@ -275,8 +375,8 @@ resolveName(Context *c, String *name)/*p;*/
 	return 0;
 }
 
-/*e*/
-void parse_ident(AST *a, Context *c, Token *t, s32 lookAhead)/*p;*/
+
+void parse_ident(AST *a, Context *c, Token *t, s32 lookAhead)
 {
 	if (lookAhead == EQUALS)
 	{

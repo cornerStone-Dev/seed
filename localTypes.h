@@ -272,7 +272,7 @@ typedef struct Word {
 
 typedef struct {
 	s32	type;
-	u8	*name;
+	Tree*name;
 	s32	varNum;
 } Variable;
 

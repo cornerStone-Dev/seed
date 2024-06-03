@@ -293,7 +293,7 @@ builtInWord(u8 *start, u32 length)/*i;*/
 /*e*/static void
 consumeAlpha(Token *t, u8 byte)/*i;*/
 {
-	u8 buffer[64];
+	static u8 buffer[64];
 	u8 *start = buffer;
 	u8 *cursor = buffer;
 	do {

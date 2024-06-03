@@ -114,13 +114,6 @@ void alarm1ISR(void)/*p;*/
 		}
 		*intSet = intsToSet;
 	}
-	// 2560ms period 0x3FF (0x007 was last I could see with eye, 20ms on/off)
-	
-	
-	//~ startSysTimer();
-	//~ io_printin(endSysTimer());
-	
-	
 	// increment period count
 	periodCount++;
 }

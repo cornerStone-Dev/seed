@@ -23,7 +23,7 @@
 	//~ if (yymajor == 0) { return; }
 	//~ Context *c = (Context *)yypParser;
 	//~ if (c.error) { return; }
-	//~ c.error = 1;
+	c.error = 1;
 	yyStackEntry *bot = yypParser->yystack + 1;
 	yyStackEntry *top = yypParser->yytos;
 	while (++bot <= top)
@@ -60,7 +60,7 @@ top_level_stmt_list ::= top_level_stmt_list top_level_stmt.
 top_level_stmt_wrap ::= stmt.
 {
 	// set flag and emit exit op code
-	 c.executeExpr=1;
+	c.executeExpr=1;
 	*c.compileCursor++ = SUBI_EXIT;
 	u16 *cursor = c.compileBase;
 	while(cursor != c.compileCursor)
@@ -114,11 +114,8 @@ stmt_if ::= else_part(A) stmt_compound.	{ parse_elseBranch(&A);}
 stmt_if ::= else_part(A) stmt_if.	{ parse_elseBranch(&A);}
 else_part ::= if_start(A) stmt_compound else_start(B). { parse_lAndP2(&A);c.nextReg=A.as.brn.regNum;A = B;}
 
-
-//~ stmt_return ::= RETURN(A) SEMI.		{parse_unaryOp(alloc(),&A,&B);}
-//~ stmt_return ::= RETURN(A) expr SEMI.	{parse_unaryOp(alloc(),&A,&B);}
-stmt_return ::= RETURN.		//{parse_unaryOp(alloc(),&A,&A);}
-stmt_return ::= RETURN expr.	//{parse_unaryOp(alloc(),&A,&B);}
+stmt_return ::= RETURN.			{parse_return(0);}
+stmt_return ::= RETURN expr(A).	{parse_return(&A);}
 
 //~ while_start ::= while_tok expr.
 while_expr ::= expr(A). { parse_lAndP1(&A);}
@@ -162,19 +159,19 @@ expr_assign ::= expr EQUALS expr.//{parse_binaryOp(alloc(),&C,B.type,&A); A.is.l
 // literals and parens
 expr ::= INT_LIT(A). {  parse_intLit(&A); }
 expr ::= STRING_LIT.
-expr ::= IDENT.
+expr ::= IDENT(A). { parse_ident(&A, yyLookahead); }
 expr ::= LPAREN(A) expr(B) RPAREN.	{ A = B; }
 // postfix
 expr ::= expr PERIOD IDENT.
 expr ::= expr LBRACK expr RBRACK.
 expr ::= expr COLON expr.
 // function call
-expr ::= funcStart args.
+expr ::= funcStart(A) args(B). { parse_namedFunctionCall(&A,B.length); }
 funcStart ::= expr LPAREN. // need to start recording exprs
-args ::= RPAREN.
+args ::= RPAREN(A). 					{ A.length = 0; }
 args ::= arg_list RPAREN.
-arg_list ::= expr.
-arg_list ::= arg_list COMMA expr.
+arg_list ::= expr(A).					{ A.length = 1; }
+arg_list ::= arg_list(A) COMMA expr.	{ A.length++; }
 // prefix
 expr ::= TILDA(A) expr(B).		{ parse_unaryOp(&A, &B, SUBI_BNOT);}
 expr ::= MINUS(A) expr(B). [TILDA]	{ parse_unaryOp(&A, &B, SUBI_NEG);}
