@@ -62,10 +62,11 @@ top_level_stmt_wrap ::= stmt.
 	// set flag and emit exit op code
 	c.executeExpr=1;
 	*c.compileCursor++ = SUBI_EXIT;
+	setLineNumber(0);
 	u16 *cursor = c.compileBase;
 	while(cursor != c.compileCursor)
 	{
-		io_printhn(*cursor++);
+		cursor=printInstruction(cursor);
 	}
 	//~ io_printsn("top_level_stmt");
 	//~ Context *c = (Context *)yypParser;

@@ -163,7 +163,216 @@ while(1){
 }
 }
 
+static u8 *instrName[]= {
+	"I_ADD                ",
+	"I_SUB                ",
+	"I_MUL                ",
+	"I_DIV                ",
+	"I_BOR                ",
+	"I_BAND               ",
+	"I_XOR                ",
+	"I_LSH                ",
+	"I_RSH                ",
+	"I_BCLR               ",
+	"I_EQ                 ",
+	"I_NE                 ",
+	"I_LT                 ",
+	"I_LE                 ",
+	"I_GT                 ",
+	"I_GE                 ",
+	"I_MOD                ",
+	"I_SET1               ",
+	"I_SET2               ",
+	"I_SET4               ",
+	"SUBI_MED_INT         ",
+	"SUBI_LRG_INT         ",
+	"SUBI_BRANCH_ZERO     ",
+	"SUBI_BRANCH_NOT_ZERO ",
+	"SUBI_BRANCH          ",
+	"SUBI_CALL            ",
+	"SUBI_RET             ",
+	"SUBI_BNOT            ",
+	"SUBI_NEG             ",
+	"SUBI_ABS             ",
+	"SUBI_NOT             ",
+	"SUBI_GET1            ",
+	"SUBI_GET2            ",
+	"SUBI_GET4            ",
+	"SUBI_CALL_ADDR       ",
+	"SUBI_CALL_C          ",
+	"SUBI_LD_GLBL         ",
+	"SUBI_ST_GLBL         ",
+	"SUBI_EXIT            ",
+	"I_MOVE               ",
+	"I_SMALL_INT          ",
+};
 
+static u32 MC_lineNum;
+
+static void
+printMachineCodeLineNum(void)
+{
+	u32 lineNum = MC_lineNum++;
+	if (lineNum < 10) {
+		io_prints("000");
+	} else if (lineNum < 100) {
+		io_prints("00");
+	} else if (lineNum < 1000) {
+		io_prints("0");
+	}
+	io_printi(lineNum);
+	io_prints(": ");
+}
+
+/*e*/void
+setLineNumber(u32 lineNum)/*p;*/
+{
+	MC_lineNum = lineNum;
+}
+
+// Fetech Decode Execute
+/*e*/u16*
+printInstruction(u16 *ip)/*p;*/
+{
+	u32 inst = *ip++;
+	// Decode
+	u32 op = inst & VM_INSTRUCTION_MASK;
+	printMachineCodeLineNum();
+	io_prints(instrName[op]);
+	u32 dest = getDest(inst);
+	u32 argR = getArg1(inst);
+	// Execute
+	switch (op){
+	case I_ADD:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] + ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_SUB:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] - ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_MUL:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] * ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_DIV:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] / ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_BOR:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] | ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_BAND:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] & ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_XOR:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] ^ ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_LSH:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] << ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_RSH:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] >> ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_BCLR:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] &~ ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_EQ:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] == ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_NE:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] != ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_LT:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] < ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_LE:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] <= ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_GT:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] > ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_GE:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] >= ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_MOD:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("r[");io_printi(dest);io_prints("] % ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_SET1:	{
+		io_prints("1BYTE_PTR(r[");io_printi(dest);io_prints("]) = ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_SET2:	{
+		io_prints("2BYTE_PTR(r[");io_printi(dest);io_prints("]) = ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_SET4:	{
+		io_prints("4BYTE_PTR(r[");io_printi(dest);io_prints("]) = ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case SUBI_MED_INT:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("LIT: ");io_printin(*ip++); MC_lineNum++; break;}
+	case SUBI_LRG_INT:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		u32 val = *ip++;val=((*ip++)<<16)+val;
+		io_prints("LIT: ");io_printin(val); MC_lineNum+=2; break; }
+	case SUBI_BRANCH_ZERO:	{
+		io_prints("if r[");io_printi(dest);io_prints("]==0 GOTO ");
+		io_printin(MC_lineNum+*(s16*)ip); MC_lineNum++; ip++; break; }
+	case SUBI_BRANCH_NOT_ZERO:	{
+		io_prints("if r[");io_printi(dest);io_prints("]!=0 GOTO ");
+		io_printin(MC_lineNum+*(s16*)ip); MC_lineNum++; ip++; break; }
+	case SUBI_BRANCH:	{
+		io_prints("GOTO ");io_printin(MC_lineNum+*(s16*)ip);
+		MC_lineNum++; ip++; break; }
+	case SUBI_CALL:		{MC_lineNum++; ip++; break;}
+	//~ case SUBI_RET:		{sp[0]=sp[dest];sp[1]=sp[dest+1];sp=rp[1];ip=rp[0];rp+=2;continue;}
+	case SUBI_BNOT:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("~r[");io_printi(dest);io_printsn("]"); break; }
+	case SUBI_NEG:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("-r[");io_printi(dest);io_printsn("]"); break; }
+	case SUBI_ABS:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("abs(r[");io_printi(dest);io_printsn("])"); break; }
+	case SUBI_NOT:	{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("not r[");io_printi(dest);io_printsn("]"); break; }
+	case SUBI_GET1:	{
+		io_prints("r[");io_printi(dest);io_prints("]) = ");
+		io_prints("1BYTE_PTR(r[");io_printi(dest);io_printsn("]"); break; }
+	case SUBI_GET2:	{
+		io_prints("r[");io_printi(dest);io_prints("]) = ");
+		io_prints("2BYTE_PTR(r[");io_printi(dest);io_printsn("]"); break; }
+	case SUBI_GET4:	{
+		io_prints("r[");io_printi(dest);io_prints("]) = ");
+		io_prints("4BYTE_PTR(r[");io_printi(dest);io_printsn("]"); break; }
+	case SUBI_CALL_ADDR:	{
+		io_prints("CALL r[");io_printi(dest);io_printsn("]"); break; }
+	case SUBI_CALL_C:	{ MC_lineNum+=2; ip+=2; break; }
+	//~ case SUBI_EXIT:		{return sp[0];}
+	case I_MOVE:	{
+		io_prints("r[");io_printi(dest);io_prints("]) = ");
+		io_prints("r[");io_printi(argR);io_printsn("]"); break; }
+	case I_SMALL_INT:{
+		io_prints("r[");io_printi(dest);io_prints("] = ");
+		io_prints("LIT: ");io_printin(argR);break;}
+	default: break;
+	}
+	return ip;
+}
 
 
 
