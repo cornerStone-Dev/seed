@@ -73,7 +73,7 @@ enum{
 	//DOT=15*CLASS1, // DOT OR PERIOD
 };
 
-static const unsigned char classTbl[] = {
+static const unsigned char class[] = {
 /*         x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xa  xb  xc  xd  xe  xf */
 /* 0x */  NUL,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,WSP,WSP,BAD,WSP,WSP,BAD,BAD,
 /* 1x */  BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,
@@ -94,83 +94,91 @@ static const unsigned char classTbl[] = {
 };
 
 static s32
-s2I(u8 byte)
+s2I(u8 *b, u8 **e)
 {
-	s32 result	= 0;
-	u8 start 	= byte;
-	if (start == '0')
+	s32 result     = 0;
+	//~ s32 isNegative = 1;
+	//~ if (*b == '-')
+	//~ {
+		//~ b++;
+		//~ isNegative = -1;
+	//~ }
+
+	if (*b == '0' && *(b+1) == 'x')
 	{
-		if (i_get() == 'x'){
 		// process hex numbers
+		b += 2;
 		tryAnotherByte:
-		start	= i_get();
-		if ( (start >= '0') && (start <= '9') )
+		if ( (*b >= '0') && (*b <= '9') )
 		{
-			result = (result * 16) + (start - '0');
+			result = (result * 16) + (*b - '0');
+			b++;
 			goto tryAnotherByte;
-		} else if ( (start >= 'A') && (start <= 'F') ) {
-			result = (result * 16) + (start - ('A' - 10));
+		} else if ( (*b >= 'A') && (*b <= 'F') ) {
+			result = (result * 16) + (*b - ('A' - 10));
+			b++;
 			goto tryAnotherByte;
 		} else {
 			goto end;
 		}
-		} else { i_ung(); }
 	}
-	
-	if ( (start >= '0') && (start <= '9') ) {
-	do {
-		result = (result * 10) + (start - '0');
-		start	= i_get();
-	} while( (start >= '0') && (start <= '9') );
-		end:
-		i_ung();
+
+	while( (*b >= '0') && (*b <= '9') )
+	{
+		result = (result * 10) + (*b - '0');
+		b++;
 	}
+
+	end:
+	//~ result = isNegative * result;
+	//~ if (e) { *e = b; }
+	*e = b;
+
 	return result;
 }
 
 /*e*/
-void
-tokenize(Token *t)/*p;*/
+u8*
+tokenize(u8 *string, Token *t)/*p;*/
 {
+	u8 *cursor = string;
 	//~ u8 *start;
 	u8 byte;
-	u8 class;
 	loop:
 	//~ start = cursor;
-	byte = i_get();
-	class = classTbl[byte] >> 2;
-	switch (class)
+	byte = class[*cursor++] >> 2;
+	switch (byte)
 {
-	case NUL>>2: { t->type = class; break; } // { goto loop; }
-	case DIV>>2: { consumeDiv(t, class); break; }
-	case PRC>>2: { t->type = class; break; }
-	case STA>>2: { t->type = class; break; }
-	case LIN>>2: { t->type = class; break; }
-	case CAR>>2: { t->type = class; break; }
-	case TIL>>2: { t->type = class; break; }
-	case PLU>>2: { t->type = class; break; }
-	case AMP>>2: { consumeAmp(t, class); break; }
-	case MIN>>2: { t->type = class; break; }
-	case SCO>>2: { t->type = class; t->string = 0; break; }
-	case ATS>>2: { t->type = class; break; }
-	case LPA>>2: { t->type = class; break; }
-	case LTH>>2: { consumeLthan(t, class); break; }
-	case GTH>>2: { consumeGthan(t, class); break; }
-	case EQU>>2: { consumeEqu(t, class); break; }
-	case LBL>>2: { t->type = class; /*t->string = 0;*/ break; }
-	case HAS>>2: { t->type = class; break; }
-	case TIC>>2: { t->type = class; break; }
-	case COM>>2: { t->type = class; break; }
-	case RBL>>2: { t->type = class; break; }
-	case DOL>>2: { t->type = class; break; }
-	case LBR>>2: { t->type = class; break; }
-	case BNG>>2: { consumeBng(t, class); break; }
-	case QMK>>2: { t->type = class; break; }
-	case DQO>>2: { t->type = class; break; }
-	case SQO>>2: { t->type = class; break; }
-	case RPA>>2: { t->type = class; t->string = 0; break; }
-	case RBR>>2: { t->type = class; break; }
-	case DOT>>2: { t->type = class; break; }
+	case NUL>>2: { t->type = byte; break; }
+	case DIV>>2: { cursor = consumeDiv(cursor, t, byte); break; }
+	case PRC>>2: { t->type = byte; break; }
+	case STA>>2: { t->type = byte; break; }
+	case LIN>>2: { t->type = byte; break; }
+	case CAR>>2: { t->type = byte; break; }
+	case TIL>>2: { t->type = byte; break; }
+	case PLU>>2: { t->type = byte; break; }
+	case AMP>>2: { cursor = consumeAmp(cursor, t, byte); break; }
+	case MIN>>2: { t->type = byte; break; }
+	case SCO>>2: { t->type = byte; t->string = 0; break; }
+	case ATS>>2: { t->type = byte; break; }
+	case LPA>>2: { t->type = byte; break; }
+	case LTH>>2: { cursor = consumeLthan(cursor, t, byte); break; }
+	case GTH>>2: { cursor = consumeGthan(cursor, t, byte); break; }
+	case EQU>>2: { cursor = consumeEqu(cursor, t, byte); break; }
+	case LBL>>2: { t->type = byte; /*t->string = 0;*/ break; }
+	case HAS>>2: { t->type = byte; break; }
+	case TIC>>2: { t->type = byte; break; }
+	case COM>>2: { t->type = byte; break; }
+	case RBL>>2: { t->type = byte; break; }
+	case DOL>>2: { t->type = byte; break; }
+	case LBR>>2: { t->type = byte; break; }
+	case BNG>>2: { cursor = consumeBng(cursor, t, byte); break; }
+	case QMK>>2: { t->type = byte; break; }
+	case DQO>>2: { t->type = byte; break; }
+	case SQO>>2: { t->type = byte; break; }
+	case RPA>>2: { t->type = byte; t->string = 0; break; }
+	case RBR>>2: { t->type = byte; break; }
+	case DOT>>2: { t->type = byte; break; }
 	//~ case COL>>2: { io_prints("Invalid starting character, aborting\n"); break; }
 	//~ case ATS>>2: { io_prints("Invalid starting character, aborting\n"); break; }
 	//~ case LPA>>2: { io_prints("Invalid starting character, aborting\n"); break; }
@@ -186,8 +194,8 @@ tokenize(Token *t)/*p;*/
 	//~ case LBR>>2: { advComileStub(77); goto loop; }
 	//~ case BNG>>2: { cursor = compileBng(cursor); goto loop; }
 	//~ case QMK>>2: { printMemStats(); goto loop; /*break;*/ }
-	case DIG>>2: { consumeNumLit(t, byte); break; }
-	case ALP>>2: { consumeAlpha(t, byte); break; }
+	case DIG>>2: { cursor = consumeNumLit(cursor, t); break; }
+	case ALP>>2: { cursor = consumeAlpha(cursor, t); break; }
 	//~ case DQO>>2: { cursor = consumeStringLit(cursor); goto loop; }
 	//~ case SQO>>2: { cursor = consumeCharLit(cursor); goto loop; }
 	//~ case RPA>>2: { if (*cursor == '{') {mc_setParams();cursor++;} else {io_printsn("Error: Right Paren alone.");} goto loop; }
@@ -199,72 +207,70 @@ tokenize(Token *t)/*p;*/
 	//~ default: { io_prints("default detected, aborting\n"); break; }
 	default: { goto loop; }
 }	
-	return;
+	return cursor;
 }
 
-/*e*/static void
-consumeNumLit(Token *t, u8 byte)/*i;*/
+/*e*/static u8*
+consumeNumLit(u8 *cursor, Token *t)/*i;*/
 {
-	t->length = s2I(byte);
+	u8 *newCursor;
 	t->type = INT_LIT;
-	//~ io_printi(t->length);
-	//~ io_printsn("INT_LIT Token");
-	return;
+	t->length = s2I(cursor - 1, &newCursor);
+	return newCursor;
 }
 
-/*e*/static void
-consumeGthan(Token *t, u8 byte)/*i;*/
+/*e*/static u8*
+consumeGthan(u8 *cursor, Token *t, u8 byte)/*i;*/
 {	
-	u8 lookAhead = classTbl[i_get()];
-		if(lookAhead==GTH) {t->type=RSHIFT;}
-	else	if(lookAhead==EQU) {t->type=GTHAN_EQ;}
-	else { t->type = byte; i_ung(); }
-	return;
+		 if(class[*cursor]==GTH) {t->type=RSHIFT;  cursor++;}
+	else if(class[*cursor]==EQU) {t->type=GTHAN_EQ;cursor++;}
+	else { t->type = byte; }
+	return cursor;
 }
 
-/*e*/static void
-consumeLthan(Token *t, u8 byte)/*i;*/
+/*e*/static u8*
+consumeLthan(u8 *cursor, Token *t, u8 byte)/*i;*/
 {	
-	u8 lookAhead = classTbl[i_get()];
-		if(lookAhead==LTH) {t->type=LSHIFT;}
-	else 	if(lookAhead==EQU) {t->type=LTHAN_EQ;}
-	else 	{ t->type = byte; i_ung(); }
-	return;
+		 if(class[*cursor]==LTH) {t->type=LSHIFT;  cursor++;}
+	else if(class[*cursor]==EQU) {t->type=LTHAN_EQ;cursor++;}
+	else { t->type = byte; }
+	return cursor;
 }
 
-/*e*/static void
-consumeEqu(Token *t, u8 byte)/*i;*/
+/*e*/static u8*
+consumeEqu(u8 *cursor, Token *t, u8 byte)/*i;*/
 {	
-	if(classTbl[i_get()]==EQU) {t->type=L_EQUALS;}
-	else { t->type = byte; i_ung(); }
-	return;
+	if(class[*cursor]==EQU) {t->type=L_EQUALS;cursor++;}
+	else { t->type = byte; }
+	return cursor;
 }
 
-/*e*/static void
-consumeBng(Token *t, u8 byte)/*i;*/
+/*e*/static u8*
+consumeBng(u8 *cursor, Token *t, u8 byte)/*i;*/
 {	
-	if(classTbl[i_get()]==EQU) {t->type=L_NEQUALS;}
-	else { t->type = byte; i_ung(); }
-	return;
+	if(class[*cursor]==EQU) {t->type=L_NEQUALS;cursor++;}
+	else { t->type = byte; }
+	return cursor;
 }
 
-/*e*/static void
-consumeAmp(Token *t, u8 byte)/*i;*/
+/*e*/static u8*
+consumeAmp(u8 *cursor, Token *t, u8 byte)/*i;*/
 {
-	if(classTbl[i_get()]==TIL) {t->type=BITCLEAR;}
-	else { t->type = byte; i_ung(); }
-	return;
+	if(class[*cursor]==TIL) {t->type=BITCLEAR;cursor++;}
+	else { t->type = byte; }
+	return cursor;
 }
 
-/*e*/static void
-consumeDiv(Token *t, u8 byte)/*i;*/
+/*e*/static u8*
+consumeDiv(u8 *cursor, Token *t, u8 byte)/*i;*/
 {	
-	if(classTbl[i_get()]==DIV) {
+	if(class[*cursor]==DIV) {
 		t->type= TOK_COMMENT;
-		while (i_get() != '\n') {}
+		while (*cursor != '\n') {cursor++;}
+		cursor++;
 	}
-	else { t->type = byte; i_ung(); }
-	return;
+	else { t->type = byte; }
+	return cursor;
 }
 
 /*e*/static s32
@@ -290,19 +296,18 @@ builtInWord(u8 *start, u32 length)/*i;*/
 	return 0;
 }
 
-/*e*/static void
-consumeAlpha(Token *t, u8 byte)/*i;*/
+/*e*/static u8*
+consumeAlpha(u8 *cursor, Token *t)/*i;*/
 {
-	static u8 buffer[64];
-	u8 *start = buffer;
-	u8 *cursor = buffer;
-	do {
-		*cursor++ = byte;
-		byte = i_get();
-	} while (classTbl[byte] & WORD_BODY);
-	i_ung();
+	u8 *start = cursor - 1;
+	u8 byte = *cursor;
+	while (class[byte] & WORD_BODY)
+	{
+		cursor++;
+		byte = *cursor;
+	}
 	// alpha parts of words cannot end with -, it is used as an operator
-	while (*(cursor - 1) == '-') { cursor--; i_ung(); }
+	while (*(cursor - 1) == '-') { cursor--; }
 	u32 wordLength = cursor - start;
 	
 	// check for built in words
@@ -319,7 +324,7 @@ consumeAlpha(Token *t, u8 byte)/*i;*/
 		t->type = IDENT;
 	}
 	#if 0
-	byte = classTbl[*cursor] >> 2;
+	byte = class[*cursor] >> 2;
 	switch (byte)
 {
 	case DIV>>2: { cursor = compilePostfixDiv(cursor, start, wordLength); goto done; }
@@ -378,6 +383,6 @@ consumeAlpha(Token *t, u8 byte)/*i;*/
 	
 	done:
 	#endif
-	return;
+	return cursor;
 }
 

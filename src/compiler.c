@@ -15,21 +15,24 @@ static void* retStack[64];
 void eCompile_Init(void)/*p;*/
 {
 	//~ Context *c = (Context*)myParser;
+	c.startOfCompile		= (void*)__bss_end__;
 	c.compileBase		= (void*)__bss_end__;
-	c.compileCursor	= (void*)__bss_end__;
+	c.compileCursor		= (void*)__bss_end__;
 	//~ c.scope 			= c->scopes;
 	//~ ParseInit(0);
 	//~ mc_spaceForPrologue(c);
+	// complile built in string of code that is baked in.
 }
 
 /*e*/
 void eCompile(void)/*p;*/
 {
 	Token *t = (Token*)&c;
+	u8 *string;
 while(1){
-	term_processCharacter();
+	string = term_processCharacter();
 	do {
-		tokenize(t);
+		string = tokenize(string, t);
 		//~ io_printin(t->type); //io_txByte('\n');
 		// send token to parser
 		if (t->type > 0) { Parse(t->type, t); }
@@ -114,15 +117,13 @@ typedef struct Inter_State {
 } Inter_State;
 static u32 traceOn;
 static Inter_State i_state;
-static u16 *MC_basePtr;
 
 static s32
-getCurLineNum(u16 *ip) { return ip - MC_basePtr; }
+getCurLineNum(u16 *ip) { return ip - c.startOfCompile; }
 
 /*e*/void
 intr_traceOn(u16 *start)/*p;*/
 {
-	setBaseCodePointer(start);
 	traceOn = 1;
 	setZero(i_state.stack, sizeof i_state.stack);
 }
@@ -277,20 +278,16 @@ printMachineCodeLineNum(u16 *ip)
 	if (lineNum < 0) {
 
 	} else if (lineNum < 10) {
-		io_prints("000");
+		io_prints("0000");
 	} else if (lineNum < 100) {
-		io_prints("00");
+		io_prints("000");
 	} else if (lineNum < 1000) {
+		io_prints("00");
+	} else if (lineNum < 10000) {
 		io_prints("0");
 	}
 	io_printi(lineNum);
 	io_prints(": ");
-}
-
-/*e*/void
-setBaseCodePointer(u16 *start)/*p;*/
-{
-	MC_basePtr = start;
 }
 
 // Fetech Decode Execute

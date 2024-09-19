@@ -64,7 +64,6 @@ top_level_stmt_wrap ::= stmt.
 	*c.compileCursor++ = SUBI_EXIT;
 	u16 *cursor = c.compileBase;
 
-	setBaseCodePointer(cursor);
 	while(cursor != c.compileCursor)
 	{
 		cursor=printInstruction(cursor);

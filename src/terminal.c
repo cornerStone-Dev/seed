@@ -89,7 +89,7 @@ static void insertCharacter(u32 input)
 }
 
 /*e*/
-void term_processCharacter(void)/*p;*/
+u8* term_processCharacter(void)/*p;*/
 {
 	u32 input;
 	TERM_STATE_NONE:
@@ -111,10 +111,11 @@ void term_processCharacter(void)/*p;*/
 		inputLine.line[inputLine.size] = 0; // null terminate
 		// save current line in to lines
 		rom_func.memcpy(&lines[term.currentLine], &inputLine, 128);
+		u8 *string = lines[term.currentLine].line;
 		//~ task_enqueue(pengum_compile, lines[term.currentLine].line, 0);
 		//~ task_enqueue(io_prints, "\r>", 0);
 		i_push("\x08", 1);
-		i_push(lines[term.currentLine].line, inputLine.size+1);
+		//~ i_push(lines[term.currentLine].line, inputLine.size+1);
 		//~ io_printh(*(u32*)lines[term.currentLine].line);
 		incrementCurrentLine();
 		setZeroWait();
@@ -122,7 +123,7 @@ void term_processCharacter(void)/*p;*/
 		inputLine.cursor = 0;
 		inputLine.size = 0;
 		//~ os_createProcess(io_prints, "\n>", 0);
-		return;
+		return string;
 	}
 	if (input == 0x7F || input == 0x08) // backspace input
 	{

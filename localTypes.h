@@ -428,6 +428,7 @@ typedef struct Context {
 	u8		localIndex;
 	u8		executeExpr;
 	u8		notLeaf;
+	u16		*startOfCompile;
 	u16		*compileBase;
 	u16		*compileCursor;
 	Tree	*globals;
